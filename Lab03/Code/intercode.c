@@ -476,15 +476,14 @@ InterCode translateExp(Node* root, Operand place) {
         */
         if (root->children[0]->childNum == 1 && 
             strcmp(root->children[0]->children[0]->name, "ID") == 0) {
-            // todo
-            // tmp1存储左侧单变量的结果
+            // tmp1存储左值
             Operand tmp1 = newTemp();
             InterCode code1 = translateExp(root->children[0]->children[0], tmp1);
-            // tmp2存储右侧表达式的运算结果
+            // tmp2存储右值
             Operand tmp2 = newTemp();
             InterCode code2 = translateExp(root->children[2], tmp2);
             InterCode code3 = (InterCode)malloc(sizeof(InterCode_));
-            code3->kind = TO_MEM_IR;
+            code3->kind = ASSIGN_IR;
             code3->ops[0] = tmp1;
             code3->ops[1] = tmp2;
             insertInterCode(code2, code1);
