@@ -465,6 +465,7 @@ void optimizeLABELBeforeGOTO(InterCode code, Operand label) {
 
 // 基本表达式的翻译
 InterCode translateExp(Node* root, Operand place) {
+    printf("root %s %d\n", root->name, root->childNum);
     // 赋值表达式
     if (root->childNum == 3 && strcmp(root->children[1]->name, "ASSIGNOP") == 0) {
         // 单个变量作为左值
@@ -474,11 +475,12 @@ InterCode translateExp(Node* root, Operand place) {
         You need to add a temporary variable, 
         then assign the expression to the temporary variable, and finally assign the temporary variable.
         */
+        printf("1 %d\n", root->childNum);
         if (root->children[0]->childNum == 1 && 
             strcmp(root->children[0]->children[0]->name, "ID") == 0) {
             // tmp1存储左值
             Operand tmp1 = newTemp();
-            InterCode code1 = translateExp(root->children[0]->children[0], tmp1);
+            InterCode code1 = translateExp(root->children[0], tmp1);
             // tmp2存储右值
             Operand tmp2 = newTemp();
             InterCode code2 = translateExp(root->children[2], tmp2);
@@ -486,10 +488,12 @@ InterCode translateExp(Node* root, Operand place) {
             code3->kind = ASSIGN_IR;
             code3->ops[0] = tmp1;
             code3->ops[1] = tmp2;
+	    printf("single %d = %d\n", tmp1->value, tmp2->value);
             insertInterCode(code2, code1);
             insertInterCode(code3, code1);
             if (place != NULL)
                 operandCpy(place, getVal(tmp1));
+	    printf("%d\n", tmp1->value);
             return code1;
         }
         // 数组元素作为左值
@@ -516,11 +520,13 @@ InterCode translateExp(Node* root, Operand place) {
             code6->kind = TO_MEM_IR;
             code6->ops[0] = tmp4;
             code6->ops[1] = tmp5;
+	    printf("array %d = %d\n", tmp4->value, tmp5->value);
             insertInterCode(code5, code1);
             insertInterCode(code6, code1);
             // 将运算结果存回place
             if (place != NULL)
                 operandCpy(place, getVal(tmp4));
+	    printf("%d\n", tmp4->value);
             return code1;
         }
         // 结构体特定域作为左值
@@ -573,6 +579,7 @@ InterCode translateExp(Node* root, Operand place) {
         InterCode code1 = translateExp(root->children[0], tmp1);
         InterCode code2 = translateExp(root->children[2], tmp2);
         insertInterCode(code2, code1);
+	printf("%d %s %d\n", tmp1->value, root->children[1]->name, tmp2->value);
         InterCode code3 = getNullInterCode();
         switch (root->children[1]->name[0]) {
             case 'P': code3 = optimizePLUSIR(place, tmp1, tmp2); break;
@@ -626,6 +633,7 @@ InterCode translateExp(Node* root, Operand place) {
         }
     }
     else if (strcmp(root->children[0]->name, "ID") == 0) {
+    	printf("2 %d %d\n", root->childNum, root->children[0]->intVal);
         // 单变量表达式
         if (root->childNum == 1) {
             Entry sym = findSymbolAll(root->children[0]->strVal);
@@ -639,6 +647,7 @@ InterCode translateExp(Node* root, Operand place) {
             // 优化：不需要取地址指令，直接修改place
             else {
                 operandCpy(place, var);
+		printf("3 %d = %d\n", place->value, var->value);
                 place->type = sym->type;
                 return getNullInterCode();
             }
