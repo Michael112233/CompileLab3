@@ -18,7 +18,7 @@ LFO = $(LFC:.c=.o)
 YFO = $(YFC:.c=.o)
 
 parser: syntax $(filter-out $(LFO),$(OBJS))
-	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
+	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl 
 
 syntax: lexical syntax-c
 	$(CC) -c $(YFC) -o $(YFO)
@@ -39,12 +39,12 @@ parser_:
 	gcc -std=c99 -g -c -o semantic.o semantic.c
 	gcc -std=c99 -g -c -o Tree.o Tree.c
 	gcc -std=c99 -g -c -o main.o main.c
-	gcc -g -o parser ./intercode.o ./semantic.o ./Tree.o ./syntax.tab.o ./main.o -lfl -ly
+	gcc -g -o parser ./intercode.o ./semantic.o ./Tree.o ./syntax.tab.o ./main.o -lfl
 
 # 定义的一些伪目标
 .PHONY: clean test
 test: parser_
-	./parser ../Test/self_test.cmm out.ir
+	./parser ./test_code1.txt out.ir
 clean:
 	rm -f parser lex.yy.c syntax.tab.c syntax.tab.h syntax.output
 	rm -f $(OBJS) $(OBJS:.o=.d)
