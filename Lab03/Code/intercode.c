@@ -850,7 +850,7 @@ InterCode translateStmt(Node* root) {
         return code1;
     }
     else if (strcmp(root->children[0]->name, "IF") == 0 && root->childNum == 7) {
-        printf("1\n");
+        // printf("1\n");
 	Operand label1 = newLabel();
         Operand label2 = newLabel();
         Operand label3 = newLabel();
@@ -858,7 +858,7 @@ InterCode translateStmt(Node* root) {
         // code1的最后一条语句为goto labelfalse并且code1中只有这一条向labelflase的跳转语句，此时可以优化
         InterCode last = findLastInterCode(code1);
         if (last->kind == GOTO_IR && last->ops[0]->no == label2->no) {
-            printf("2\n");
+            // printf("2\n");
 	    int count = 0;
             if (code1->kind == GOTO_IR && code1->ops[0]->no == label2->no)
                 count++;
