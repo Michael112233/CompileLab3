@@ -488,7 +488,7 @@ InterCode translateExp(Node* root, Operand place) {
             code3->kind = ASSIGN_IR;
             code3->ops[0] = tmp1;
             code3->ops[1] = tmp2;
-	        // printf("single %d = %d\n", tmp1->value, tmp2->value);
+	    // printf("single %d = %d\n", tmp1->value, tmp2->value);
             insertInterCode(code2, code1);
             insertInterCode(code3, code1);
             if (place != NULL)
@@ -520,13 +520,13 @@ InterCode translateExp(Node* root, Operand place) {
             code6->kind = TO_MEM_IR;
             code6->ops[0] = tmp4;
             code6->ops[1] = tmp5;
-	        // printf("array %d = %d\n", tmp4->value, tmp5->value);
+	    // printf("array %d = %d\n", tmp4->value, tmp5->value);
             insertInterCode(code5, code1);
             insertInterCode(code6, code1);
             // 将运算结果存回place
             if (place != NULL)
                 operandCpy(place, getVal(tmp4));
-	        // printf("%d\n", tmp4->value);
+	    // printf("%d\n", tmp4->value);
             return code1;
         }
         // 结构体特定域作为左值
@@ -579,7 +579,7 @@ InterCode translateExp(Node* root, Operand place) {
         InterCode code1 = translateExp(root->children[0], tmp1);
         InterCode code2 = translateExp(root->children[2], tmp2);
         insertInterCode(code2, code1);
-	    // printf("%d %s %d\n", tmp1->value, root->children[1]->name, tmp2->value);
+	// printf("%d %s %d\n", tmp1->value, root->children[1]->name, tmp2->value);
         InterCode code3 = getNullInterCode();
         switch (root->children[1]->name[0]) {
             case 'P': code3 = optimizePLUSIR(place, tmp1, tmp2); break;
@@ -657,7 +657,7 @@ InterCode translateExp(Node* root, Operand place) {
             // 优化：不需要取地址指令，直接修改place
             else {
                 operandCpy(place, var);
-		        // printf("3 %d = %d\n", place->value, var->value);
+		// printf("3 %d = %d\n", place->value, var->value);
                 place->type = sym->type;
                 return getNullInterCode();
             }
@@ -850,14 +850,16 @@ InterCode translateStmt(Node* root) {
         return code1;
     }
     else if (strcmp(root->children[0]->name, "IF") == 0 && root->childNum == 7) {
-        Operand label1 = newLabel();
+        printf("1\n");
+	Operand label1 = newLabel();
         Operand label2 = newLabel();
         Operand label3 = newLabel();
         InterCode code1 = translateCond(root->children[2], label1, label2);
         // code1的最后一条语句为goto labelfalse并且code1中只有这一条向labelflase的跳转语句，此时可以优化
         InterCode last = findLastInterCode(code1);
         if (last->kind == GOTO_IR && last->ops[0]->no == label2->no) {
-            int count = 0;
+            printf("2\n");
+	    int count = 0;
             if (code1->kind == GOTO_IR && code1->ops[0]->no == label2->no)
                 count++;
             InterCode curr = code1->pre;
@@ -967,7 +969,8 @@ InterCode translateCond(Node* root, Operand labelTrue, Operand labelFalse) {
             code3->kind = IF_GOTO_IR;
             code3->ops[0] = tmp1;
             code3->ops[1] = tmp2;
-            strcpy(root->children[1]->strVal, code3->relop);
+            // printf("relop %s\n", root->children[1]->strVal);
+	    strcpy(code3->relop, root->children[1]->strVal);
             code3->ops[2] = labelTrue;
             InterCode code4 = (InterCode)malloc(sizeof(InterCode_));
             code4->kind = GOTO_IR;
@@ -1008,6 +1011,7 @@ InterCode translateCond(Node* root, Operand labelTrue, Operand labelFalse) {
         code2->kind = IF_GOTO_IR;
         code2->ops[0] = tmp1;
         strcpy(code2->relop, "!=");
+
         code2->ops[1] = getValue(0);
         code2->ops[2] = labelTrue;
         InterCode code3 = (InterCode)malloc(sizeof(InterCode_));
