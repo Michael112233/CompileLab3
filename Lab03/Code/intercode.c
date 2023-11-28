@@ -465,7 +465,6 @@ void optimizeLABELBeforeGOTO(InterCode code, Operand label) {
 
 // 基本表达式的翻译
 InterCode translateExp(Node* root, Operand place) {
-    // printf("root %s %d\n", root->name, root->childNum);
     // 赋值表达式
     if (root->childNum == 3 && strcmp(root->children[1]->name, "ASSIGNOP") == 0) {
         // 单个变量作为左值
@@ -618,7 +617,7 @@ InterCode translateExp(Node* root, Operand place) {
              strcmp(root->children[1]->name, "RELOP") == 0 ||
              strcmp(root->children[1]->name, "AND") == 0 ||
              strcmp(root->children[1]->name, "OR") == 0)) {
-        // todo
+	// todo
         Operand label1 = newLabel();
         Operand label2 = newLabel();
         InterCode code1 = (InterCode)malloc(sizeof(InterCode_));
@@ -850,7 +849,6 @@ InterCode translateStmt(Node* root) {
         return code1;
     }
     else if (strcmp(root->children[0]->name, "IF") == 0 && root->childNum == 7) {
-        // printf("1\n");
 	Operand label1 = newLabel();
         Operand label2 = newLabel();
         Operand label3 = newLabel();
@@ -858,7 +856,6 @@ InterCode translateStmt(Node* root) {
         // code1的最后一条语句为goto labelfalse并且code1中只有这一条向labelflase的跳转语句，此时可以优化
         InterCode last = findLastInterCode(code1);
         if (last->kind == GOTO_IR && last->ops[0]->no == label2->no) {
-            // printf("2\n");
 	    int count = 0;
             if (code1->kind == GOTO_IR && code1->ops[0]->no == label2->no)
                 count++;
@@ -955,59 +952,60 @@ Pay attention to how to implement short-circuit translation.
 */
 InterCode translateCond(Node* root, Operand labelTrue, Operand labelFalse) {
     // todo
-    if(root->childNum == 2 && strcmp(root->children[0]->name, "NOT") == 0) {
+    if(root->childNum == 3 && strcmp(root->children[0]->name, "LP") == 0) {
+	return translateCond(root->children[1], labelTrue, labelFalse);
+    } else if(root->childNum == 2 && strcmp(root->children[0]->name, "NOT") == 0) {
         // not EXP;
         return translateCond(root->children[1], labelFalse, labelTrue);
-    } else if(root->childNum == 3) {
-        if(strcmp(root->children[1]->name, "RELOP") == 0) {
-            // Exp1 relop Exp2
-            Operand tmp1 = newTemp();
-            Operand tmp2 = newTemp();
-            InterCode code1 = translateExp(root->children[0], tmp1);
-            InterCode code2 = translateExp(root->children[2], tmp2);
-            InterCode code3 = (InterCode)malloc(sizeof(InterCode_));
-            code3->kind = IF_GOTO_IR;
-            code3->ops[0] = tmp1;
-            code3->ops[1] = tmp2;
-            // printf("relop %s\n", root->children[1]->strVal);
-	    strcpy(code3->relop, root->children[1]->strVal);
-            code3->ops[2] = labelTrue;
-            InterCode code4 = (InterCode)malloc(sizeof(InterCode_));
-            code4->kind = GOTO_IR;
-            code4->ops[0] = labelFalse;
-            insertInterCode(code2, code1);
-            insertInterCode(code3, code1);
-            insertInterCode(code4, code1);
-            return code1;
-        } else if(strcmp(root->children[1]->name, "AND") == 0) {
-            // Exp1 and Exp2
-            // label1 -> before Exp2
-            Operand label1 = newLabel();
-            InterCode code1 = translateCond(root->children[0], label1, labelFalse);
-            InterCode code2 = translateCond(root->children[2], labelTrue, labelFalse);
-            InterCode code3 = (InterCode)malloc(sizeof(InterCode_));
-            code3->kind = LABEL_IR;
-            code3->ops[0] = label1;
-            insertInterCode(code2, code1);
-            insertInterCode(code3, code1);
-            return code1; 
-        } else if(strcmp(root->children[1]->name, "OR") == 0) {
-            // Exp1 or Exp2
-            // label1 -> before Exp2
-            Operand label1 = newLabel();
-            InterCode code1 = translateCond(root->children[0], labelTrue, label1);
-            InterCode code2 = translateCond(root->children[2], labelTrue, labelFalse);
-            InterCode code3 = (InterCode)malloc(sizeof(InterCode_));
-            code3->kind = LABEL_IR;
-            code3->ops[0] = label1;
-            insertInterCode(code2, code1);
-            insertInterCode(code3, code1);
-            return code1;
-        }
-    } else {
+    } else if(root->childNum == 3 && strcmp(root->children[1]->name, "RELOP") == 0) {
+	// Exp1 relop Exp2
         Operand tmp1 = newTemp();
+        Operand tmp2 = newTemp();
         InterCode code1 = translateExp(root->children[0], tmp1);
-        InterCode code2 = (InterCode)malloc(sizeof(InterCode_));
+        InterCode code2 = translateExp(root->children[2], tmp2);
+        InterCode code3 = (InterCode)malloc(sizeof(InterCode_));
+        code3->kind = IF_GOTO_IR;
+        code3->ops[0] = tmp1;
+        code3->ops[1] = tmp2;
+        // printf("relop %s\n", root->children[1]->strVal);
+	strcpy(code3->relop, root->children[1]->strVal);
+        code3->ops[2] = labelTrue;
+        InterCode code4 = (InterCode)malloc(sizeof(InterCode_));
+        code4->kind = GOTO_IR;
+        code4->ops[0] = labelFalse;
+        insertInterCode(code2, code1);
+        insertInterCode(code3, code1);
+        insertInterCode(code4, code1);
+        return code1;
+    } else if(root->childNum == 3 && strcmp(root->children[1]->name, "AND") == 0) {
+        // Exp1 and Exp2
+        // label1 -> before Exp2
+        Operand label1 = newLabel();
+        InterCode code1 = translateCond(root->children[0], label1, labelFalse);
+        InterCode code2 = translateCond(root->children[2], labelTrue, labelFalse);
+        InterCode code3 = (InterCode)malloc(sizeof(InterCode_));
+        code3->kind = LABEL_IR;
+        code3->ops[0] = label1;
+        insertInterCode(code2, code1);
+        insertInterCode(code3, code1);
+        return code1; 
+    } else if(root->childNum == 3 && strcmp(root->children[1]->name, "OR") == 0) {
+        // Exp1 or Exp2
+        // label1 -> before Exp2
+        Operand label1 = newLabel();
+        InterCode code1 = translateCond(root->children[0], labelTrue, label1);
+        InterCode code2 = translateCond(root->children[2], labelTrue, labelFalse);
+        InterCode code3 = (InterCode)malloc(sizeof(InterCode_));
+        code3->kind = LABEL_IR;
+        code3->ops[0] = label1;
+        insertInterCode(code2, code1);
+        insertInterCode(code3, code1);
+        return code1;
+    }  
+    else {
+        Operand tmp1 = newTemp();
+        InterCode code1 = translateExp(root, tmp1);
+	InterCode code2 = (InterCode)malloc(sizeof(InterCode_));
         code2->kind = IF_GOTO_IR;
         code2->ops[0] = tmp1;
         strcpy(code2->relop, "!=");
